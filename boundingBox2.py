@@ -8,7 +8,7 @@ import numpy as np
 # Webcamera no 0 is used to capture the frames 
 #cap = cv2.VideoCapture(0)  
 cap = cv2.VideoCapture("random_vid.mp4")
-#https://www.youtube.com/watch?v=gJgXsaj_gR0&list=PLGmxyVGSCDKvmLInHxJ9VdiwEb82Lxd2E&index=10
+#https://www.youtube.com/watch?v=BQE2TREDcoQ
 
 if (cap.isOpened() == False):
     print("gdi")
