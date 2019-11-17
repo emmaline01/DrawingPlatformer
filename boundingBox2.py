@@ -10,18 +10,21 @@ import numpy as np
 cap = cv2.VideoCapture("random_vid.mp4")
 #https://www.youtube.com/watch?v=gJgXsaj_gR0&list=PLGmxyVGSCDKvmLInHxJ9VdiwEb82Lxd2E&index=10
 
-# This drives the program into an infinite loop. 
-while(cap.isOpened()):        
-    # Captures the live stream frame-by-frame 
-    _, frame = cap.read()  
-    # Converts images from BGR to HSV 
+while(cap.isOpened()):
+    
+    _, frame = cap.read()
+    
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
     lower_red = np.array([110,50,50]) 
-    upper_red = np.array([130,255,255]) 
+    upper_red = np.array([130,255,255])
     
-# Here we are defining range of bluecolor in HSV 
-# This creates a mask of blue coloured  
-# objects found in the frame. 
+    #choosing colors to track
+    #https://docs.opencv.org/trunk/df/d9d/tutorial_py_colorspaces.html
+    #green = np.uint8([[[0,255,0 ]]])
+    #hsv_green = cv.cvtColor(green,cv.COLOR_BGR2HSV)
+    #print( hsv_green )
+
+    
     mask = cv2.inRange(hsv, lower_red, upper_red) 
     res = cv2.bitwise_and(frame,frame, mask= mask)
 
@@ -29,24 +32,16 @@ while(cap.isOpened()):
     contours, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for c in contours:
         x,y,w,h = cv2.boundingRect(c)
-        print(x,y,w,h)
+        #print(x,y,w,h)
         cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
-
-# The bitwise and of the frame and mask is done so  
-# that only the blue coloured objects are highlighted  
-# and stored in res 
     
     cv2.imshow('frame',frame) 
     cv2.imshow('mask',mask) 
-    cv2.imshow('res',res) 
-  
-# This displays the frame, mask  
-# and res which we created in 3 separate windows. 
+    cv2.imshow('res',res)
+    
     if (cv2.waitKey(25) & 0xFF== ord('q')):
         break
   
-# Destroys all of the HighGUI windows. 
 cv2.destroyAllWindows() 
   
-# release the captured frame 
 cap.release() 
