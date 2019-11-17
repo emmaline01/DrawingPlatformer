@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import copy
 
 class mainApp(object):
     def __init__(self):
@@ -33,8 +34,8 @@ class mainApp(object):
         elif (key == ord(' ')):
             if (self.isDrawing == True):
                 self.isDrawing = False
+                self.dots.insert(0, (-1,-1,-1,-1))
             else:
-                print('drawing')
                 self.isDrawing = True
             
     def findBlue(self):
@@ -50,42 +51,33 @@ class mainApp(object):
 
         for c in contours:
             x,y,w,h = cv2.boundingRect(c)
-            self.dots += [(x,y,w,h)]
+            self.dots.insert(0, (x,y,w,h))
+
+            #check that it isn't a stray errant detection
+            if (len(self.dots) > 1):
+                x1,y1,w1,h1 = self.dots[1]
+                if (x1 == -1):
+                    continue  
+                if (not (abs(x1-x) < 20 and abs(y1-y) < 20)):
+                    self.dots.pop(0)
+                
 
     def drawDots(self):
-        #fix gaps first
-        '''
-        i = 1
-        while (i < len(self.dots) - 1):
-            x0,y0,w0,h0 = self.dots[i-1]
+        
+        i = 0
+        while i < (len(self.dots) - 1):
             x1,y1,w1,h1 = self.dots[i]
             x2,y2,w2,h2 = self.dots[i+1]
 
-            if (x1 <  0 or x2 < 0):
+            #intentional gap?
+            if (x2 == -1):
+                i += 2
                 continue
             
-            if (abs(x1-x2) > 5 and abs(y1-y2) > 5 and
-                abs(x1-x0) > 5 and abs(y1-y0) > 5):
-                self.dots.pop(i)
-
+            cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255))
             i += 1
-        '''
-        i = 0
-        while (i < len(self.dots) - 1):
-            x1,y1,w1,h1 = self.dots[i]
-            x2,y2,w2,h2 = self.dots[i+1]
-
-            if (abs(x1-x2) > 10 or abs(y1-y2) > 10):
-                self.dots.pop(i+1)
-            i += 1
-        print(self.dots)
-        for i in range(len(self.dots) - 1):
-            x1,y1,w1,h1 = self.dots[i]
-            x2,y2,w2,h2 = self.dots[i+1]
+            #cv2.circle(self.frame, (x1, y1), 5, (0,0,255), thickness = -1)
             
-            #cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255))
-            cv2.circle(self.frame, (x1, y1), 5, (0,0,255), thickness = -1)
-    
     def endGame(self):
         cv2.destroyAllWindows() 
         self.cap.release() 
