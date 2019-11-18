@@ -2,14 +2,23 @@ import cv2
 import numpy as np
 import copy
 
+from monster import *
+
 class mainApp(object):
     def __init__(self):
         self.dots = []
         self.isDrawing = False
         self.currLine = []
+
+        self.initMonsters()
+        
         self.cap = cv2.VideoCapture("random_vid.mp4")
         self.gameLoop()
 
+    def initMonsters(self):
+        self.monsters = set()
+        self.monsters.add(Monster(0, 0))
+    
     def gameLoop(self):
         while (self.cap.isOpened()):
             _, self.frame = self.cap.read()
@@ -23,6 +32,8 @@ class mainApp(object):
             
     def redrawAll(self):
         self.drawDots()
+        for monster in self.monsters:
+            monster.draw(self.frame)
         
     def cameraFired(self):
         if (self.isDrawing):
@@ -69,13 +80,13 @@ class mainApp(object):
                 x2,y2,w2,h2 = self.dots[j][i+1]
 
                 #draws anti-aliased line
-                cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255), thickness = 10, lineType=cv2.LINE_AA)
+                cv2.line(self.frame, (x1, y1), (x2, y2), (2,122,219), thickness = 10, lineType=cv2.LINE_AA)
 
         for i in range(len(self.currLine) - 1):
                 x1,y1,w1,h1 = self.currLine[i]
                 x2,y2,w2,h2 = self.currLine[i+1]
                 
-                cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255), thickness = 10, lineType=cv2.LINE_AA)
+                cv2.line(self.frame, (x1, y1), (x2, y2), (2,122,219), thickness = 10, lineType=cv2.LINE_AA)
                 #cv2.circle(self.frame, (x1, y1), 5, (0,0,255), thickness = -1)
             
     def endGame(self):
