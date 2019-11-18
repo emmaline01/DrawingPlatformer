@@ -58,7 +58,7 @@ class mainApp(object):
             #check that it isn't a stray errant detection
             if (len(self.currLine) > 1):
                 x1,y1,w1,h1 = self.currLine[1]
-                if (not (abs(x1-x) < 20 and abs(y1-y) < 20)):
+                if (not (abs(x1-x) < 25 and abs(y1-y) < 25)):
                     self.currLine.pop(0)
                 
 
@@ -67,14 +67,15 @@ class mainApp(object):
             for i in range(len(self.dots[j]) - 1):
                 x1,y1,w1,h1 = self.dots[j][i]
                 x2,y2,w2,h2 = self.dots[j][i+1]
-                
-                cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255))
+
+                #draws anti-aliased line
+                cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255), thickness = 10, lineType=cv2.LINE_AA)
 
         for i in range(len(self.currLine) - 1):
                 x1,y1,w1,h1 = self.currLine[i]
                 x2,y2,w2,h2 = self.currLine[i+1]
                 
-                cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255))
+                cv2.line(self.frame, (x1, y1), (x2, y2), (0,0,255), thickness = 10, lineType=cv2.LINE_AA)
                 #cv2.circle(self.frame, (x1, y1), 5, (0,0,255), thickness = -1)
             
     def endGame(self):
