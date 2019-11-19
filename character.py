@@ -1,7 +1,11 @@
+#Character class that keeps track of the main character's position and actions
+
 import cv2
 import numpy as np
 
 class Character(object):
+
+    #initializes the character's position, vertical velocity, and size
     def __init__(self, x, y):
         #everything in self.frame coordinates
         self.x = x
@@ -10,7 +14,9 @@ class Character(object):
         self.width = 20
         self.height = 20
     
-    #there's a problem where it balances on the highest point no necessarily near it x-direction wise
+    #given a list of points, returns the two points nearest to the character 
+    # on the left and right
+    #TODO: there's a problem where it balances on the highest point no necessarily near it x-direction wise
     def getNearestGroundPts(self, ground):
         nearestPtLeft = (-1, -1, -1, -1)
         nearestPtRight = (-1, -1, -1, -1)
@@ -46,36 +52,21 @@ class Character(object):
 
         nearestPtLeft, nearestPtRight = self.getNearestGroundPts(nearestPts)
 
-
-        '''
-        for i in range(len(currGround)):
-            xL, yL, _, _ = nearestPtLeft
-            xR, yR, _, _ = nearestPtRight
-
-            #find the two points nearest to it
-            x1,y1,w1,h1 = currGround[i]
-
-            if (abs(self.x - x1) < abs(self.x - xL) and 
-                abs(self.y -y1) < abs(self.y - yL) and
-                x1 < self.x):
-                nearestPtLeft = currGround[i]
-            elif (abs(self.x - x1) < abs(self.x - xR) and 
-                abs(self.y - y1) < abs(self.y - yR) and
-                x1 > self.x):
-                nearestPtRight = currGround[i]
-        '''
         xL, yL, _, _ = nearestPtLeft
         xR, yR, _, _ = nearestPtRight
         if (xL > -1 and xR > -1):
             self.dy = 0
             self.y = int(yR / xR * xL)
 
+    #draws the character on the given frame
     def draw(self, frame):
         cv2.rectangle(frame, (self.x, self.y), 
             (self.x + self.width, self.y + self.height), 
             (0,0,255), thickness = -1)
 
-    #return what side of the character is touching if it is touching
+    #checks if the character is touching a given rectangle of points
+    #TODO: return what side of the character is touching if it is touching
+    #TODO: incomplete
     def isTouching(self, pos):
         x,y,w,h = pos
         if ((abs(self.x - x) < 40 and abs(self.y - y) < 40)
