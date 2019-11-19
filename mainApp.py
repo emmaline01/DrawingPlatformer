@@ -9,10 +9,12 @@ class mainApp(object):
         self.dots = []
         self.isDrawing = False
         self.currLine = []
+        
+        self.scrollX = 5
 
         self.initMonsters()
         
-        self.cap = cv2.VideoCapture("random_vid.mp4")
+        self.cap = cv2.VideoCapture(0)
         self.gameLoop()
 
     def initMonsters(self):
@@ -34,10 +36,31 @@ class mainApp(object):
         self.drawDots()
         for monster in self.monsters:
             monster.draw(self.frame)
-        
+
+    def scrollListPts(self, lst):
+        j = 0
+        while (j < len(lst)):
+            x,y,w,h = lst[j]
+            lst[j] = (x-self.scrollX, y, w, h)
+
+            if (x <= 0):
+                lst.pop(j)
+                continue
+            j += 1
+
     def cameraFired(self):
         if (self.isDrawing):
             self.findBlue()
+        
+
+        i = 0
+        while (i < len(self.dots)):
+            self.scrollListPts(self.dots[i])
+            if (len(self.dots[i]) == 0):
+                self.dots.pop(i)
+                continue
+            i += 1
+        self.scrollListPts(self.currLine)
 
     def checkKeyPressed(self):
         key = cv2.waitKey(25) & 0xFF
@@ -53,24 +76,28 @@ class mainApp(object):
             
     def findBlue(self):
         hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV) 
-        lower_red = np.array([110,50,50]) 
-        upper_red = np.array([130,255,255])
+        lower_b = np.array([100,130,130]) 
+        upper_b = np.array([130,255,255])
 
     
-        mask = cv2.inRange(hsv, lower_red, upper_red) 
+        mask = cv2.inRange(hsv, lower_b, upper_b) 
 
         ret, thresh = cv2.threshold(mask, 127, 255, cv2.THRESH_TOZERO)
         contours, hier = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         for c in contours:
             x,y,w,h = cv2.boundingRect(c)
-            self.currLine.insert(0, (x,y,w,h))
+            if (y > 10 and h > 10):
+                self.currLine.insert(0, (x,y,w,h))
+                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),2)
+                cv2.circle(self.frame, (x, y), 10, (2,122,219))
 
-            #check that it isn't a stray errant detection
-            if (len(self.currLine) > 1):
-                x1,y1,w1,h1 = self.currLine[1]
-                if (not (abs(x1-x) < 25 and abs(y1-y) < 25)):
-                    self.currLine.pop(0)
+                #check that it isn't a stray errant detection
+                
+                if (len(self.currLine) > 1):
+                    x1,y1,w1,h1 = self.currLine[1]
+                    if (not (abs(x1-x) < 40 and abs(y1-y) < 40)):
+                        self.currLine.pop(0)
                 
 
     def drawDots(self):
@@ -87,7 +114,6 @@ class mainApp(object):
                 x2,y2,w2,h2 = self.currLine[i+1]
                 
                 cv2.line(self.frame, (x1, y1), (x2, y2), (2,122,219), thickness = 10, lineType=cv2.LINE_AA)
-                #cv2.circle(self.frame, (x1, y1), 5, (0,0,255), thickness = -1)
             
     def endGame(self):
         cv2.destroyAllWindows() 

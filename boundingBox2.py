@@ -7,7 +7,7 @@ import numpy as np
 
 # Webcamera no 0 is used to capture the frames 
 #cap = cv2.VideoCapture(0)  
-cap = cv2.VideoCapture("random_vid.mp4")
+cap = cv2.VideoCapture(0)
 #https://www.youtube.com/watch?v=gJgXsaj_gR0&list=PLGmxyVGSCDKvmLInHxJ9VdiwEb82Lxd2E&index=10
 
 while(cap.isOpened()):
@@ -15,7 +15,7 @@ while(cap.isOpened()):
     _, frame = cap.read()
     
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
-    lower_red = np.array([110,50,50]) 
+    lower_red = np.array([100,100,100]) 
     upper_red = np.array([130,255,255])
     
     #choosing colors to track
@@ -33,7 +33,8 @@ while(cap.isOpened()):
     for c in contours:
         x,y,w,h = cv2.boundingRect(c)
         #print(x,y,w,h)
-        cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
+        if (w > 10 and h > 10):
+            cv2.rectangle(frame,(x,y),(x+w,y+h),(0,0,255),2)
     
     cv2.imshow('frame',frame) 
     cv2.imshow('mask',mask) 
