@@ -3,6 +3,7 @@ import numpy as np
 import copy
 
 from monster import *
+from character import *
 
 class mainApp(object):
     def __init__(self):
@@ -16,6 +17,13 @@ class mainApp(object):
 
         self.cap = cv2.VideoCapture(0)
 
+        #2 lines edited from https://stackoverflow.com/questions/39953263/
+        # get-video-dimension-in-python-opencv
+        self.width =  int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        self.player = Character(self.width//2, self.height//2)
+
         self.gameLoop()
 
     def initMonsters(self):
@@ -23,40 +31,46 @@ class mainApp(object):
         self.monsters.add(Monster(0, 0))
     
     def gameLoop(self):
-        #2 lines edited from https://stackoverflow.com/questions/39953263/
-        # get-video-dimension-in-python-opencv
-        width =  int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         while (self.cap.isOpened()):
 
-            self.blank = np.zeros((height, width, 3), np.uint8)
+            self.blank = np.zeros((self.height, self.width, 3), np.uint8)
             _, self.frame = self.cap.read()
 
             self.cameraFired()
             self.redrawAll()
-
-            actualDisplay = cv2.resize(self.frame, 
-                    (width*3//4, height*3//4), 
-                    interpolation=cv2.INTER_AREA)
-            self.blank = cv2.resize(self.blank, 
-                    (width*3//4, height*3//4), 
-                    interpolation=cv2.INTER_AREA)
-            self.blank = cv2.GaussianBlur(self.blank, (21,21), 0)
-
-            combined = cv2.addWeighted(self.blank, 0.7, 
-                actualDisplay, 0.3, 0)
+            
+            self.blurDrawing()
+            combined = cv2.addWeighted(self.blank, 0.5, 
+                self.frame, 0.5, 0)
             
             cv2.imshow('Drawing Platformer', combined)
             cv2.imshow('blank', self.blank)
 
             #this is here for a reason don't move it dammit
             self.checkKeyPressed()
-            
+
+    def blurDrawing(self):
+        #resizing this many times already just blurs it 
+        #self.blank = cv2.GaussianBlur(self.blank, (21,21), 0)
+        for i in range(80):
+            if (i % 2 == 0):
+                self.blank = cv2.resize(self.blank, 
+                    (self.width//4, self.height//4))
+            else:
+                self.blank = cv2.resize(self.blank, 
+                    (self.width, self.height))
+
+    #credit to https://stackoverflow.com/questions/14063070/overlay-a-smaller-
+    # image-on-a-larger-image-python-opencv/14102014
+    def placeOn(smallImg, bigImg, yOffset, xOffset):
+        bigImg[yOffset:yOffset+smallImg.shape[0], xOffset:xOffset+smallImg.shape[1]] = smallImg
+
     def redrawAll(self):
         self.drawDots()
         for monster in self.monsters:
             monster.draw(self.frame)
+        self.player.draw(self.frame)
 
     def scrollListPts(self, lst):
         j = 0
@@ -82,6 +96,9 @@ class mainApp(object):
             i += 1
         self.scrollListPts(self.currLine)
 
+        self.player.dy += 1
+        self.player.fall(self.dots, self.currLine)
+
     def checkKeyPressed(self):
         key = cv2.waitKey(25) & 0xFF
         if (key == ord('q')):
@@ -93,6 +110,9 @@ class mainApp(object):
                 self.currLine = []
             else:
                 self.isDrawing = True
+        elif (key == ord('g')):
+            self.player.y = 0
+            self.player.dy = 0
             
     def findBlue(self):
         hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV) 
@@ -116,7 +136,7 @@ class mainApp(object):
                 
                 if (len(self.currLine) > 1):
                     x1,y1,w1,h1 = self.currLine[1]
-                    if (not (abs(x1-x) < 40 and abs(y1-y) < 40)):
+                    if (not (abs(x1-x) < 60 and abs(y1-y) < 60)):
                         self.currLine.pop(0)
 
     def drawDots(self):
