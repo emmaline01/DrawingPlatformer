@@ -1,7 +1,15 @@
+'''
+CHANGES SINCE TP1 MEETING/LAST AUTOLAB SUBMISSION:
+instead of trying to stand on the platform, the character jumps as soon as 
+    it lands
+character's platform detection is functional
+'''
+
 #Character class that keeps track of the main character's position and actions
 
 import cv2
 import numpy as np
+import copy
 
 class Character(object):
 
@@ -16,7 +24,6 @@ class Character(object):
     
     #given a list of points, returns the two points nearest to the character 
     # on the left and right
-    #TODO: there's a problem where it balances on the highest point no necessarily near it x-direction wise
     def getNearestGroundPts(self, ground):
         nearestPtLeft = (-1, -1, -1, -1)
         nearestPtRight = (-1, -1, -1, -1)
@@ -27,7 +34,7 @@ class Character(object):
             x1,y1,w1,h1 = ground[i]
                     
             if (abs(self.x - x1) < abs(self.x - xL) and 
-                abs(self.y -y1) < abs(self.y - yL) and
+                abs(self.y - y1) < abs(self.y - yL) and
                 x1 < self.x and self.y < y1):
                 nearestPtLeft = ground[i]
             elif (abs(self.x - x1) < abs(self.x - xR) and 
@@ -44,19 +51,31 @@ class Character(object):
         nearestPtRight = (-1, -1, -1, -1)
 
         nearestPts = []
+        newList = copy.copy(currGround)
         for i in range(len(ground)):
-            nL, nR = self.getNearestGroundPts(ground[i])
-            nearestPts += [nL, nR]
-        nL, nR = self.getNearestGroundPts(currGround)
-        nearestPts += [nL, nR]
-
-        nearestPtLeft, nearestPtRight = self.getNearestGroundPts(nearestPts)
+            newList += ground[i]
+        nearestPtLeft, nearestPtRight = self.getNearestGroundPts(newList)
 
         xL, yL, _, _ = nearestPtLeft
         xR, yR, _, _ = nearestPtRight
+
         if (xL > -1 and xR > -1):
-            self.dy = 0
-            self.y = int(yR / xR * xL)
+
+            #check if both points are in the same list - 
+            # not over an intentional gap
+            inSameList = False
+            if (nearestPtLeft in currGround and nearestPtRight in currGround):
+                inSameList = True
+            for i in range(len(ground)):
+                if (nearestPtLeft in ground[i] and 
+                    nearestPtRight in ground[i]):
+                    inSameList = True
+                    break
+            
+            #get the y coordinate on the line under the character
+            yOnLine = yL - ((yL - yR)/(xR - xL))*(xL- self.x) 
+            if (inSameList and abs(yOnLine - self.y) < self.height * 3):
+                self.dy = -20
 
     #draws the character on the given frame
     def draw(self, frame):

@@ -7,7 +7,7 @@ import copy
 from monster import *
 from character import *
 
-class mainApp(object):
+class MainApp(object):
 
     #initializes all the game elements and enters the game loop
     def __init__(self):
@@ -53,7 +53,6 @@ class mainApp(object):
                 self.frame, 0.5, 0)
             
             cv2.imshow('Drawing Platformer', combined)
-            cv2.imshow('blank', self.blank)
 
             #this is here for a reason don't move it dammit
             self.checkKeyPressed()
@@ -182,4 +181,4 @@ class mainApp(object):
         cv2.destroyAllWindows() 
         self.cap.release() 
 
-m = mainApp()
+m = MainApp()
