@@ -75,6 +75,8 @@ class Character(object):
             #get the y coordinate on the line under the character
             yOnLine = yL - ((yL - yR)/(xR - xL))*(xL- self.x) 
             if (inSameList and abs(yOnLine - self.y) < self.height * 3):
+                #jump height of about 90
+                #total jump time of about 40 calls to cameraFired
                 self.dy = -20
 
     #draws the character on the given frame

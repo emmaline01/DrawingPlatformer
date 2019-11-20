@@ -1,3 +1,8 @@
+'''
+CHANGES SINCE TP1 MEETING/LAST AUTOLAB SUBMISSION:
+camera is flipped so that it acts as a mirror
+'''
+
 #This file contains the mainApp class, begins the game, and runs it
 
 import cv2
@@ -17,8 +22,6 @@ class MainApp(object):
         
         self.scrollX = 5
 
-        self.initMonsters()
-
         self.cap = cv2.VideoCapture(0)
 
         #2 lines edited from https://stackoverflow.com/questions/39953263/
@@ -27,19 +30,20 @@ class MainApp(object):
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
         self.player = Character(self.width//2, self.height//2)
+        self.initMonsters()
 
         self.gameLoop()
 
     #initializes all of the monsters
     def initMonsters(self):
         self.monsters = set()
-        self.monsters.add(Monster(0, 0))
+        self.monsters.add(Monster(0, self.height//2, self.player))
     
     #the main game loop, which runs for as long as the camera is on, calls
     #  the various functions that make gameplay possible, and displays the 
     # screen
     def gameLoop(self):
-
+        
         while (self.cap.isOpened()):
 
             self.blank = np.zeros((self.height, self.width, 3), np.uint8)
@@ -52,7 +56,7 @@ class MainApp(object):
             combined = cv2.addWeighted(self.blank, 0.5, 
                 self.frame, 0.5, 0)
             
-            cv2.imshow('Drawing Platformer', combined)
+            cv2.imshow('Drawing Platformer', cv2.flip(combined, 1))
 
             #this is here for a reason don't move it dammit
             self.checkKeyPressed()
@@ -88,7 +92,7 @@ class MainApp(object):
         j = 0
         while (j < len(lst)):
             x,y,w,h = lst[j]
-            lst[j] = (x-self.scrollX, y, w, h)
+            lst[j] = (x + self.scrollX, y, w, h)
 
             if (x <= 0):
                 lst.pop(j)
@@ -98,6 +102,7 @@ class MainApp(object):
     #called with every new new frame captured by the camera, updates the 
     # positions of all game elements
     def cameraFired(self):
+
         if (self.isDrawing):
             self.findBlue()
         
@@ -112,6 +117,9 @@ class MainApp(object):
 
         self.player.dy += 1
         self.player.fall(self.dots, self.currLine)
+        
+        for monster in self.monsters:
+            monster.move()
 
     #checks keys to see if the player wants to close the window, or draw
     def checkKeyPressed(self):
@@ -128,6 +136,8 @@ class MainApp(object):
         elif (key == ord('g')):
             self.player.y = 0
             self.player.dy = 0
+        elif (key == ord('h')):
+            self.monsters.add(Monster(0, self.height//2, self.player))
 
     #uses vision to identify the blue pointer and store its current position 
     # as the newest point in the list of point forming a line currently being 
