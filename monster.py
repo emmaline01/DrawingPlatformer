@@ -1,8 +1,3 @@
-'''
-CHANGES SINCE TP1 MEETING/LAST AUTOLAB SUBMISSION:
-basic algorithm for monster movement added
-'''
-
 #Monster class that keeps track of a monster's position and actions
 import cv2
 import numpy as np

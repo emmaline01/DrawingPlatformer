@@ -1,10 +1,3 @@
-'''
-CHANGES SINCE TP1 MEETING/LAST AUTOLAB SUBMISSION:
-instead of trying to stand on the platform, the character jumps as soon as 
-    it lands
-character's platform detection is functional
-'''
-
 #Character class that keeps track of the main character's position and actions
 
 import cv2
@@ -84,6 +77,10 @@ class Character(object):
         cv2.rectangle(frame, (self.x, self.y), 
             (self.x + self.width, self.y + self.height), 
             (0,0,255), thickness = -1)
+
+    #checks if the character fell off the bottom of the screen
+    def checkFellOff(self, screenHeight):
+        return self.y > screenHeight
 
     #checks if the character is touching a given rectangle of points
     #TODO: return what side of the character is touching if it is touching
