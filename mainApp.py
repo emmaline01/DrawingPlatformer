@@ -1,21 +1,15 @@
 #This file contains the mainApp class, begins the game, and runs it
 
-import cv2
-import numpy as np
-import copy
+import random 
 
 from monster import *
 from character import *
+from obstacle import *
 
 class MainApp(object):
 
-    #initializes all the game elements and enters the game loop
+    #initializes everything for one time and begins the gmae
     def __init__(self):
-        self.dots = []
-        self.isDrawing = False
-        self.currLine = []
-        self.distance = 0
-
         self.scrollX = 5
 
         self.cap = cv2.VideoCapture(0)
@@ -23,8 +17,27 @@ class MainApp(object):
         self.width =  int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
-        self.player = Character(self.width//2, self.height//2)
-        self.initMonsters()
+        self.player = Character(self.width//2, 0)
+
+        self.startGame()
+
+    #sets all game elements up for the game to begin
+    def startGame(self):
+        self.dots = []
+        self.isDrawing = False
+        self.currLine = []
+        self.distance = 0
+        self.inkMax = 30
+        self.ink = self.inkMax
+
+        self.player.x = self.width//2
+        self.player.y = 0
+        self.player.dy = 0
+
+        self.numMonsters = 0
+        self.numObstacles = 0
+        self.monsters = set()
+        self.obstacles = set()
 
         self.initScreens()
         self.gameLoop()
@@ -38,11 +51,6 @@ class MainApp(object):
         self.initStartScreen()
         self.initHelpScreen()
 
-    #initializes all of the monsters
-    def initMonsters(self):
-        self.monsters = set()
-        self.monsters.add(Monster(0, self.height//2, self.player))
-
     #sets up the starting screen
     def initStartScreen(self):
         self.startScreen = np.zeros((self.height, self.width, 3), 
@@ -50,7 +58,13 @@ class MainApp(object):
         cv2.rectangle(self.startScreen, (0,0), 
             (self.width, self.height), (255,255,255), thickness = -1)
         cv2.putText(self.startScreen, 'a game.', (10, self.height//2), 
-            cv2.FONT_HERSHEY_PLAIN, 3, (0,0,0), 2, cv2.LINE_AA)
+            cv2.FONT_HERSHEY_PLAIN, 4, (0,0,0), 2, cv2.LINE_AA)
+        cv2.putText(self.startScreen, 'press space to play!', 
+            (10, self.height//2 + 50), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
+            2, cv2.LINE_AA)
+        cv2.putText(self.startScreen, 'press h for help', 
+            (10, self.height//2 + 100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
+            2, cv2.LINE_AA)
 
     #sets up the ending screen
     def initEndScreen(self):
@@ -65,6 +79,10 @@ class MainApp(object):
         cv2.putText(self.endScreen, 
             f'distance bounced: {self.distance}', 
             (10, self.height//2 + 40), cv2.FONT_HERSHEY_PLAIN, 2, 
+            (255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(self.endScreen, 
+            'Press r to restart!', 
+            (10, self.height//2 + 80), cv2.FONT_HERSHEY_PLAIN, 2, 
             (255,255,255), 2, cv2.LINE_AA)
 
     #sets up the help screen
@@ -85,7 +103,7 @@ If the blue color detection of your pointer isn't
 working, move to a brighter area
 
 
-Press space to return to the game!"""
+Press h to return!"""
         self.helpScreen = np.zeros((self.height, self.width, 3), 
             np.uint8)
         cv2.rectangle(self.helpScreen, (0,0), 
@@ -105,21 +123,22 @@ Press space to return to the game!"""
 
             self.blank = np.zeros((self.height, self.width, 3), np.uint8)
             _, self.frame = self.cap.read()
-
-            if (self.isStartScreen):
-                toShow = self.startScreen
-            elif (self.isHelpScreen):
+            
+            if (self.isHelpScreen):
                 toShow = self.helpScreen
+            elif (self.isStartScreen):
+                toShow = self.startScreen
             elif (self.isEndScreen):
                 self.initEndScreen()
                 toShow = self.endScreen
             else:
+                self.frame = cv2.flip(self.frame, 1)
                 self.cameraFired()
                 self.redrawAll()
                 
                 self.blurDrawing()
-                toShow = cv2.flip(cv2.addWeighted(self.blank, 0.5, 
-                    self.frame, 0.5, 0), 1)
+                toShow = cv2.addWeighted(self.blank, 0.5, 
+                    self.frame, 0.5, 0)
             
             cv2.imshow('Drawing Platformer', toShow)
 
@@ -150,14 +169,22 @@ Press space to return to the game!"""
         self.drawDots()
         for monster in self.monsters:
             monster.draw(self.frame)
+        for obstacle in self.obstacles:
+            obstacle.draw(self.frame)
         self.player.draw(self.frame)
+
+        cv2.putText(self.frame, 'Press h for help', (10, self.height - 10), 
+            cv2.FONT_HERSHEY_PLAIN, 1.2, (0,0,0), 2, cv2.LINE_AA)
+        cv2.putText(self.frame, 
+            f'Distance: {self.distance}           Ink: {self.ink}', (10, 20), 
+            cv2.FONT_HERSHEY_PLAIN, 1.2, (0,0,0), 2, cv2.LINE_AA)
 
     #scrolls the ground list across the screen
     def scrollListPts(self, lst):
         j = 0
         while (j < len(lst)):
             x,y,w,h = lst[j]
-            lst[j] = (x + self.scrollX, y, w, h)
+            lst[j] = (x - self.scrollX, y, w, h)
 
             if (x <= 0):
                 lst.pop(j)
@@ -171,6 +198,11 @@ Press space to return to the game!"""
 
         if (self.isDrawing):
             self.findBlue()
+            self.ink -= 1
+            if (self.ink <= 0):
+                self.isDrawing = False
+        elif (self.ink < self.inkMax):
+            self.ink += 1
         
         i = 0
         while (i < len(self.dots)):
@@ -186,8 +218,50 @@ Press space to return to the game!"""
         if (self.player.checkFellOff(self.height)):
             self.isEndScreen = True
 
+        self.updateMonsters()
+        self.updateObstacles()
+
+    #updates all of the monsters' movements
+    def updateMonsters(self):
+        toRemove = None
         for monster in self.monsters:
-            monster.move()
+            monster.move(self.obstacles)
+            if (monster.isOffScreen()):
+                toRemove = monster
+            if (self.player.isTouching((monster.x, monster.y, 
+                monster.x + monster.r, monster.y + monster.r))):
+                self.isEndScreen = True
+        if (toRemove != None):
+            self.monsters.remove(toRemove)
+
+        if (random.randint(1, 80) == 1):
+            self.numMonsters += 1
+            self.monsters.add(Monster(self.width, 
+                random.randint(0, self.height), self.player,
+                self.numMonsters))
+
+    #updates all of the obstacles' movements 
+    def updateObstacles(self):
+        toRemove = None
+        for obstacle in self.obstacles:
+            obstacle.x -= self.scrollX
+            if (obstacle.isOffScreen()):
+                toRemove = obstacle
+            if (self.player.isTouching(
+                (obstacle.x, obstacle.y, obstacle.width, obstacle.height))):
+                self.player.x -= self.scrollX
+                #TODO: bug if the player touches the right side of the obstacle?
+                #have the function return the side of the obstacle being touched
+        if (toRemove != None):
+            self.obstacles.remove(toRemove)
+
+        #TODO: change chances as game gets harder
+        if (random.randint(1,40) == 1):
+            self.numObstacles += 1
+            randomHeight = random.randint(20, 80)
+            self.obstacles.add(Obstacle(self.width, 
+                random.randint(0, self.height - randomHeight), 
+                randomHeight, self.numObstacles))
 
     #checks keys to see if the player wants to close the window, or draw
     def checkKeyPressed(self):
@@ -195,13 +269,14 @@ Press space to return to the game!"""
         #universal keys
         if (key == ord('q')):
             self.endGame()
-        if (key == ord('h')):
-            self.isHelpScreen = True
+        elif (key == ord('r')):
+            self.startGame()
+        elif (key == ord('h')):
+            self.isHelpScreen = not self.isHelpScreen
 
-        if (self.isStartScreen or self.isHelpScreen):
+        if (self.isStartScreen): 
             if (key == ord(' ')):
                 self.isStartScreen = False
-                self.isHelpScreen = False
         elif (not self.isEndScreen):
             if (key == ord(' ')):
                 if (self.isDrawing == True):

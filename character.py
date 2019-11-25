@@ -76,18 +76,18 @@ class Character(object):
     def draw(self, frame):
         cv2.rectangle(frame, (self.x, self.y), 
             (self.x + self.width, self.y + self.height), 
-            (0,0,255), thickness = -1)
+            (0,255,0), thickness = -1)
 
     #checks if the character fell off the bottom of the screen
     def checkFellOff(self, screenHeight):
-        return self.y > screenHeight
+        return (self.y > screenHeight) or (self.x < 0)
 
     #checks if the character is touching a given rectangle of points
     #TODO: return what side of the character is touching if it is touching
-    #TODO: incomplete
     def isTouching(self, pos):
         x,y,w,h = pos
-        if ((abs(self.x - x) < 40 and abs(self.y - y) < 40)
-            or (abs(self.x - x - w) < 40 and abs(self.y - y - h) < 40)):
+        if ((abs(self.x - x) < self.width*2 and abs(self.y - y) < self.height*2)
+            or (abs(self.x - x - w) < self.width*2 and 
+            abs(self.y - y - h) < self.height*2)):
             return True
         return False
