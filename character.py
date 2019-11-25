@@ -37,6 +37,7 @@ class Character(object):
 
         return nearestPtLeft, nearestPtRight
 
+    #the character continuously falls unless it touches a platform
     def fall(self, ground, currGround):
         self.y += self.dy
         

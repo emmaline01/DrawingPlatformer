@@ -1,3 +1,5 @@
+#Obstacle class that keeps track of an obstacle's position and actions
+
 import cv2
 import numpy as np
 

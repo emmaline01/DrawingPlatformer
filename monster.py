@@ -13,6 +13,8 @@ class Monster(object):
         self.speed = 10
         self.character = character
         self.targetNode = (self.character.x, self.character.y)
+        self.dy = 0
+        self.dx = 0
         #40 calls to cameraFired per character jump
 
     #moves the monster and adjusts its target node coordinates
@@ -76,11 +78,11 @@ class Monster(object):
         if (targetX != self.x):
             slope = (targetY - self.y) / (targetX - self.x)
             theta = math.atan(slope)
-            self.y -= int(self.speed*math.sin(theta))
-            self.x = self.x - int(self.speed*math.cos(theta)) - 3
+            self.dy = int(self.speed*math.sin(theta))
+            self.dx = int(self.speed*math.cos(theta)) - 3
             #overshoot a little bit
-        else:
-            self.x -= self.speed
+        self.x -= self.dx
+        self.y -= self.dy
 
     #checks if the monster has a direct path towards the character
     def hasDirectPathToCharacter(self, obstacles):

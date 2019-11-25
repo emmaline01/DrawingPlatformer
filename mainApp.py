@@ -10,8 +10,6 @@ class MainApp(object):
 
     #initializes everything for one time and begins the gmae
     def __init__(self):
-        self.scrollX = 5
-
         self.cap = cv2.VideoCapture(0)
 
         self.width =  int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -23,12 +21,14 @@ class MainApp(object):
 
     #sets all game elements up for the game to begin
     def startGame(self):
+        self.scrollX = 5
         self.dots = []
         self.isDrawing = False
         self.currLine = []
         self.distance = 0
         self.inkMax = 30
         self.ink = self.inkMax
+        self.health = 3
 
         self.player.x = self.width//2
         self.player.y = 0
@@ -38,6 +38,8 @@ class MainApp(object):
         self.numObstacles = 0
         self.monsters = set()
         self.obstacles = set()
+        self.obstacleChances = 50
+        self.monsterChances = 80
 
         self.initScreens()
         self.gameLoop()
@@ -175,8 +177,8 @@ Press h to return!"""
 
         cv2.putText(self.frame, 'Press h for help', (10, self.height - 10), 
             cv2.FONT_HERSHEY_PLAIN, 1.2, (0,0,0), 2, cv2.LINE_AA)
-        cv2.putText(self.frame, 
-            f'Distance: {self.distance}           Ink: {self.ink}', (10, 20), 
+        overText = f'Distance: {self.distance} Ink: {self.ink} Health: {self.health}'
+        cv2.putText(self.frame, overText, (10, 20), 
             cv2.FONT_HERSHEY_PLAIN, 1.2, (0,0,0), 2, cv2.LINE_AA)
 
     #scrolls the ground list across the screen
@@ -195,6 +197,13 @@ Press h to return!"""
     # positions of all game elements
     def cameraFired(self):
         self.distance += 1
+        #game gets harder
+        if (self.distance % 150 == 0):
+            self.monsterChances -= 10
+            self.obstacleChances -= 10
+            self.inkMax -= 5
+            self.scrollX += 2
+            #need some kind of stop so it doesn't keep decrementing forever
 
         if (self.isDrawing):
             self.findBlue()
@@ -230,11 +239,14 @@ Press h to return!"""
                 toRemove = monster
             if (self.player.isTouching((monster.x, monster.y, 
                 monster.x + monster.r, monster.y + monster.r))):
-                self.isEndScreen = True
+                self.health -= 1
+                toRemove = monster
+                if (self.health == 0):
+                    self.isEndScreen = True
         if (toRemove != None):
             self.monsters.remove(toRemove)
 
-        if (random.randint(1, 80) == 1):
+        if (random.randint(1, self.monsterChances) == 1):
             self.numMonsters += 1
             self.monsters.add(Monster(self.width, 
                 random.randint(0, self.height), self.player,
@@ -255,8 +267,7 @@ Press h to return!"""
         if (toRemove != None):
             self.obstacles.remove(toRemove)
 
-        #TODO: change chances as game gets harder
-        if (random.randint(1,40) == 1):
+        if (random.randint(1,self.obstacleChances) == 1):
             self.numObstacles += 1
             randomHeight = random.randint(20, 80)
             self.obstacles.add(Obstacle(self.width, 
