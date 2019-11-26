@@ -36,7 +36,7 @@ class Monster(object):
         targetX, targetY = newTarget
         for nodeX, nodeY in nodes:
             #choose the node with the closest x-value to the player
-            if (abs(nodeX - self.character.x) > 
+            if (abs(nodeX - self.character.x) < 
                 abs(targetX - self.character.x)):
                 newTarget = (nodeX, nodeY)
                 targetX, targetY = newTarget
@@ -58,8 +58,8 @@ class Monster(object):
         for obstacle in obstacles:
             if (obstacle.x > self.character.x and obstacle.x < self.x):
                 x = obstacle.x + obstacle.width // 2
-                y1 = obstacle.y
-                y2 = obstacle.y + obstacle.height
+                y1 = obstacle.y - (self.r * 2)
+                y2 = obstacle.y + obstacle.height + (self.r * 2)
                 
                 slope = (y1 - self.y) / (x - self.character.x)
                 if (not self.goesThroughObstacles(slope, obstacles)):

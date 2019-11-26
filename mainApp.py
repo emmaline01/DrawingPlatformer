@@ -28,7 +28,7 @@ class MainApp(object):
         self.distance = 0
         self.inkMax = 30
         self.ink = self.inkMax
-        self.health = 3
+        self.health = 5
 
         self.player.x = self.width//2
         self.player.y = 0
@@ -288,7 +288,7 @@ Press h to return!"""
         if (self.isStartScreen): 
             if (key == ord(' ')):
                 self.isStartScreen = False
-        elif (not self.isEndScreen):
+        elif (not self.isEndScreen and not self.isHelpScreen):
             if (key == ord(' ')):
                 if (self.isDrawing == True):
                     self.isDrawing = False
