@@ -1,3 +1,6 @@
+#Drawing Platformer
+#by Emmaline Mai (emai, Section B)
+
 #Monster class that keeps track of a monster's position and actions
 import cv2
 import numpy as np
@@ -19,14 +22,17 @@ class Monster(object):
 
     #moves the monster and adjusts its target node coordinates
     def move(self, obstacles):
-        if (self.x - self.r > self.character.x):
+        if (self.x - 4*self.r > self.character.x):
+            #TODO: bug where it sometimes spasms between nodes??
             if (self.hasDirectPathToCharacter(obstacles)):
                 self.targetNode = (self.character.x, self.character.y)
             else:
                 self.newTargetNode(obstacles)
             self.moveTowardsTargetNode()
         else:
-            self.x -= self.speed
+            print('h')
+            self.x -= self.dx
+            self.y -= self.dy
     
     #finds a new target node by choosing the most optimal of possible nodes
     def newTargetNode(self, obstacles):
@@ -79,9 +85,8 @@ class Monster(object):
             slope = (targetY - self.y) / (targetX - self.x)
             theta = math.atan(slope)
             self.dy = int(self.speed*math.sin(theta))
-            self.dx = int(self.speed*math.cos(theta)) - 3
-            #overshoot a little bit
-        self.x -= self.dx
+            self.dx = int(self.speed*math.cos(theta))
+        self.x = self.x - self.dx
         self.y -= self.dy
 
     #checks if the monster has a direct path towards the character

@@ -1,3 +1,6 @@
+#Drawing Platformer
+#by Emmaline Mai (emai, Section B)
+
 #This file contains the mainApp class, begins the game, and runs it
 
 import random 
@@ -59,13 +62,14 @@ class MainApp(object):
             np.uint8)
         cv2.rectangle(self.startScreen, (0,0), 
             (self.width, self.height), (255,255,255), thickness = -1)
-        cv2.putText(self.startScreen, 'a game.', (10, self.height//2), 
+        cv2.putText(self.startScreen, 'Drawing Platformer', 
+            (10, self.height//2), 
             cv2.FONT_HERSHEY_PLAIN, 4, (0,0,0), 2, cv2.LINE_AA)
         cv2.putText(self.startScreen, 'press space to play!', 
-            (10, self.height//2 + 50), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
+            (10, self.height//2 + 100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
             2, cv2.LINE_AA)
         cv2.putText(self.startScreen, 'press h for help', 
-            (10, self.height//2 + 100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
+            (10, self.height//2 + 150), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
             2, cv2.LINE_AA)
 
     #sets up the ending screen
@@ -76,7 +80,7 @@ class MainApp(object):
             (self.width, self.height), (0,0,0), thickness = -1)
         cv2.putText(self.endScreen, 
             'better luck next time.', 
-            (10, self.height//2), cv2.FONT_HERSHEY_PLAIN, 2, 
+            (10, self.height//2 - 40), cv2.FONT_HERSHEY_PLAIN, 2, 
             (255,255,255), 2, cv2.LINE_AA)
         cv2.putText(self.endScreen, 
             f'distance bounced: {self.distance}', 
@@ -160,12 +164,6 @@ Press h to return!"""
                 self.blank = cv2.resize(self.blank, 
                     (self.width, self.height))
 
-    #credit to https://stackoverflow.com/questions/14063070/overlay-a-smaller-
-    # image-on-a-larger-image-python-opencv/14102014
-    #places a smaller image on a larger image
-    def placeOn(smallImg, bigImg, yOffset, xOffset):
-        bigImg[yOffset:yOffset+smallImg.shape[0], xOffset:xOffset+smallImg.shape[1]] = smallImg
-
     #main function that draws all of the game elements
     def redrawAll(self):
         self.drawDots()
@@ -199,11 +197,13 @@ Press h to return!"""
         self.distance += 1
         #game gets harder
         if (self.distance % 150 == 0):
-            self.monsterChances -= 10
-            self.obstacleChances -= 10
-            self.inkMax -= 5
+            if (self.monsterChances > 20):
+                self.monsterChances -= 10
+            if (self.obstacleChances > 20):
+                self.obstacleChances -= 10
+            if (self.inkMax > 10):
+                self.inkMax -= 5
             self.scrollX += 2
-            #need some kind of stop so it doesn't keep decrementing forever
 
         if (self.isDrawing):
             self.findBlue()
@@ -237,8 +237,12 @@ Press h to return!"""
             monster.move(self.obstacles)
             if (monster.isOffScreen()):
                 toRemove = monster
-            if (self.player.isTouching((monster.x, monster.y, 
-                monster.x + monster.r, monster.y + monster.r))):
+            x1 = monster.x
+            y1 = monster.y
+            x2 = monster.x + monster.r
+            y2 = monster.y + monster.r
+            if (self.player.isTouching((x1, y1, x2, y2)) == 'right' or 
+                self.player.isTouching((x1, y1, x2, y2)) == 'left'):
                 self.health -= 1
                 toRemove = monster
                 if (self.health == 0):
@@ -260,10 +264,9 @@ Press h to return!"""
             if (obstacle.isOffScreen()):
                 toRemove = obstacle
             if (self.player.isTouching(
-                (obstacle.x, obstacle.y, obstacle.width, obstacle.height))):
+                (obstacle.x, obstacle.y, obstacle.width, obstacle.height))
+                == 'right'):
                 self.player.x -= self.scrollX
-                #TODO: bug if the player touches the right side of the obstacle?
-                #have the function return the side of the obstacle being touched
         if (toRemove != None):
             self.obstacles.remove(toRemove)
 

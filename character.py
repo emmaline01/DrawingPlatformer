@@ -1,3 +1,6 @@
+#Drawing Platformer
+#by Emmaline Mai (emai, Section B)
+
 #Character class that keeps track of the main character's position and actions
 
 import cv2
@@ -84,11 +87,13 @@ class Character(object):
         return (self.y > screenHeight) or (self.x < 0)
 
     #checks if the character is touching a given rectangle of points
-    #TODO: return what side of the character is touching if it is touching
     def isTouching(self, pos):
         x,y,w,h = pos
         if ((abs(self.x - x) < self.width*2 and abs(self.y - y) < self.height*2)
             or (abs(self.x - x - w) < self.width*2 and 
             abs(self.y - y - h) < self.height*2)):
-            return True
-        return False
+            if (self.x > x):
+                return 'left'
+            else:
+                return 'right'
+        return 'neither'

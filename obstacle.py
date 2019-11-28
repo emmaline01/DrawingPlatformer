@@ -1,3 +1,6 @@
+#Drawing Platformer
+#by Emmaline Mai (emai, Section B)
+
 #Obstacle class that keeps track of an obstacle's position and actions
 
 import cv2
