@@ -16,7 +16,7 @@ in speed and numbers of obstacles and enemies.
 
 How to run the project:
 Make sure the character, monster, obstacle, and mainApp files are in the same directory, 
-and run the mainApp.py file
+and run the mainApp.py file. Press q to close the game window when finished.
 
 Libraries needed:
 opencv, numpy

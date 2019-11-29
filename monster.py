@@ -30,8 +30,7 @@ class Monster(object):
                 self.newTargetNode(obstacles)
             self.moveTowardsTargetNode()
         else:
-            print('h')
-            self.x -= self.dx
+            self.x = self.x - self.dx - 3 #add error to monster movements
             self.y -= self.dy
     
     #finds a new target node by choosing the most optimal of possible nodes

@@ -11,7 +11,7 @@ from obstacle import *
 
 class MainApp(object):
 
-    #initializes everything for one time and begins the gmae
+    #initializes everything for one time and begins the game
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
 
@@ -25,11 +25,21 @@ class MainApp(object):
     #sets all game elements up for the game to begin
     def startGame(self):
         self.scrollX = 5
+        self.distance = 0
+        self.inkMax = 30
+        self.triesLeft = 3
+
+        self.obstacleChances = 50
+        self.monsterChances = 80
+
+        self.startFromCheckpoint()
+        self.initScreens()
+        self.gameLoop()
+
+    def startFromCheckpoint(self):
         self.dots = []
         self.isDrawing = False
         self.currLine = []
-        self.distance = 0
-        self.inkMax = 30
         self.ink = self.inkMax
         self.health = 5
 
@@ -41,11 +51,9 @@ class MainApp(object):
         self.numObstacles = 0
         self.monsters = set()
         self.obstacles = set()
-        self.obstacleChances = 50
-        self.monsterChances = 80
 
-        self.initScreens()
-        self.gameLoop()
+        #starting from checkpoint
+        self.distance = 150 * (self.distance // 150)        
 
     #calls functions to initialize the start, end, and help screens
     def initScreens(self):
@@ -63,8 +71,8 @@ class MainApp(object):
         cv2.rectangle(self.startScreen, (0,0), 
             (self.width, self.height), (255,255,255), thickness = -1)
         cv2.putText(self.startScreen, 'Drawing Platformer', 
-            (10, self.height//2), 
-            cv2.FONT_HERSHEY_PLAIN, 4, (0,0,0), 2, cv2.LINE_AA)
+            (10, self.height//2 - 40), 
+            cv2.FONT_HERSHEY_PLAIN, 3, (0,0,0), 2, cv2.LINE_AA)
         cv2.putText(self.startScreen, 'press space to play!', 
             (10, self.height//2 + 100), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 
             2, cv2.LINE_AA)
@@ -84,11 +92,22 @@ class MainApp(object):
             (255,255,255), 2, cv2.LINE_AA)
         cv2.putText(self.endScreen, 
             f'distance bounced: {self.distance}', 
-            (10, self.height//2 + 40), cv2.FONT_HERSHEY_PLAIN, 2, 
+            (10, self.height//2), cv2.FONT_HERSHEY_PLAIN, 2, 
             (255,255,255), 2, cv2.LINE_AA)
+        if (self.triesLeft > 0):
+            cv2.putText(self.endScreen, 
+            f'{self.triesLeft} tries left. Press c to retry from last checkpoint', 
+            (10, self.height//2 + 80), cv2.FONT_HERSHEY_PLAIN, 1.2, 
+            (255,255,255), 2, cv2.LINE_AA)
+        else:
+            cv2.putText(self.endScreen, 
+            'Sorry, you have no tries left.', 
+            (10, self.height//2 + 80), cv2.FONT_HERSHEY_PLAIN, 1.2, 
+            (255,255,255), 2, cv2.LINE_AA)
+
         cv2.putText(self.endScreen, 
-            'Press r to restart!', 
-            (10, self.height//2 + 80), cv2.FONT_HERSHEY_PLAIN, 2, 
+            'Press r to restart entirely!', 
+            (10, self.height//2 + 120), cv2.FONT_HERSHEY_PLAIN, 1.2, 
             (255,255,255), 2, cv2.LINE_AA)
 
     #sets up the help screen
@@ -106,7 +125,7 @@ by total distance run.
 
 Troubleshooting:
 If the blue color detection of your pointer isn't 
-working, move to a brighter area
+working, move to a brighter area.
 
 
 Press h to return!"""
@@ -124,10 +143,9 @@ Press h to return!"""
     #the main game loop, which runs for as long as the camera is on, calls
     #  the various functions that make gameplay possible, and displays the 
     # screen
-    def gameLoop(self):
+    def gameLoop(self):        
         while (self.cap.isOpened()):
-
-            self.blank = np.zeros((self.height, self.width, 3), np.uint8)
+            self.blank = np.zeros((self.height, self.width, 3), dtype=np.uint8)
             _, self.frame = self.cap.read()
             
             if (self.isHelpScreen):
@@ -139,17 +157,39 @@ Press h to return!"""
                 toShow = self.endScreen
             else:
                 self.frame = cv2.flip(self.frame, 1)
+
                 self.cameraFired()
                 self.redrawAll()
                 
                 self.blurDrawing()
-                toShow = cv2.addWeighted(self.blank, 0.5, 
-                    self.frame, 0.5, 0)
+                toShow = cv2.addWeighted(self.blank, 1, 
+                    self.frame, 0.7, 0)
             
             cv2.imshow('Drawing Platformer', toShow)
 
-            #this is here for a reason don't move it dammit
             self.checkKeyPressed()
+
+    #parallax drawing of mountains in the background   
+    def drawMountains(self, img):
+        mountainWidth = self.width // 7
+
+        #back set
+        for i in range(-1 * (self.scrollX + 2) * self.distance, 
+            self.width, mountainWidth):
+            if (i + mountainWidth >= 0):
+                trianglePts = np.array([(i, self.height), 
+                    (i+mountainWidth, self.height), 
+                    ((i+i+mountainWidth)//2, self.height-100)])
+                cv2.drawContours(img, [trianglePts], -1, (0,80,0), -1)
+        
+        #front set
+        for i in range(-1 * self.scrollX * self.distance, self.width, 
+            mountainWidth):
+            if (i + mountainWidth >= 0):
+                trianglePts = np.array([(i, self.height), 
+                    (i+mountainWidth, self.height), 
+                    ((i+i+mountainWidth)//2, self.height-50)])
+                cv2.drawContours(img, [trianglePts], -1, (0,75,150), -1)
 
     #blurs and smooths out the drawing done by the player by 
     # resizing it multiple times
@@ -166,6 +206,7 @@ Press h to return!"""
 
     #main function that draws all of the game elements
     def redrawAll(self):
+        self.drawMountains(self.frame)
         self.drawDots()
         for monster in self.monsters:
             monster.draw(self.frame)
@@ -175,7 +216,7 @@ Press h to return!"""
 
         cv2.putText(self.frame, 'Press h for help', (10, self.height - 10), 
             cv2.FONT_HERSHEY_PLAIN, 1.2, (0,0,0), 2, cv2.LINE_AA)
-        overText = f'Distance: {self.distance} Ink: {self.ink} Health: {self.health}'
+        overText=f'Distance:{self.distance} Ink:{self.ink} Health:{self.health}'
         cv2.putText(self.frame, overText, (10, 20), 
             cv2.FONT_HERSHEY_PLAIN, 1.2, (0,0,0), 2, cv2.LINE_AA)
 
@@ -291,6 +332,11 @@ Press h to return!"""
         if (self.isStartScreen): 
             if (key == ord(' ')):
                 self.isStartScreen = False
+        elif (self.isEndScreen):
+            if (self.triesLeft > 0 and key == ord('c')):
+                self.startFromCheckpoint()
+                self.isEndScreen = False
+                self.triesLeft -= 1
         elif (not self.isEndScreen and not self.isHelpScreen):
             if (key == ord(' ')):
                 if (self.isDrawing == True):
@@ -299,11 +345,6 @@ Press h to return!"""
                     self.currLine = []
                 else:
                     self.isDrawing = True
-            elif (key == ord('g')):
-                self.player.y = 0
-                self.player.dy = 0
-            elif (key == ord('m')):
-                self.monsters.add(Monster(0, self.height//2, self.player))
 
     #uses vision to identify the blue pointer and store its current position 
     # as the newest point in the list of point forming a line currently being 
@@ -312,7 +353,6 @@ Press h to return!"""
         hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV) 
         lower_b = np.array([100,130,130]) 
         upper_b = np.array([130,255,255])
-
     
         mask = cv2.inRange(hsv, lower_b, upper_b) 
 
