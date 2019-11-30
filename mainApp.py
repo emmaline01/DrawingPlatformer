@@ -82,10 +82,10 @@ class MainApp(object):
             cv2.FONT_HERSHEY_DUPLEX, 2, (46,6,69), 2, cv2.LINE_AA)
         cv2.putText(self.startScreen, 'Press space to play!', 
             (10, self.height//2 + 100), cv2.FONT_HERSHEY_DUPLEX, 1, 
-            (46,6,69), 1, cv2.LINE_AA)
+            (46,6,69), 2, cv2.LINE_AA)
         cv2.putText(self.startScreen, 'Press h for help', 
             (10, self.height//2 + 150), cv2.FONT_HERSHEY_DUPLEX, 1, 
-            (46,6,69), 1, cv2.LINE_AA)
+            (46,6,69), 2, cv2.LINE_AA)
 
     #sets up the ending screen
     def initEndScreen(self):
@@ -95,15 +95,15 @@ class MainApp(object):
             (self.width, self.height), (46,6,69), thickness = -1)
         cv2.putText(self.endScreen, 
             'Better luck next time.', 
-            (10, self.height//2 - 50), cv2.FONT_HERSHEY_DUPLEX, 1.25, 
+            (10, self.height//2 - 50), cv2.FONT_HERSHEY_DUPLEX, 1.2, 
             (203,164,229), 2, cv2.LINE_AA)
         cv2.putText(self.endScreen, 
-            f'Total distance bounced: {self.distance}', 
-            (10, self.height//2), cv2.FONT_HERSHEY_DUPLEX, 1.25, 
+            f'Total distance bounced: {self.distance}m', 
+            (10, self.height//2), cv2.FONT_HERSHEY_DUPLEX, 1.2, 
             (203,164,229), 2, cv2.LINE_AA)
         if (self.triesLeft > 0):
             cv2.putText(self.endScreen, 
-            f'{self.triesLeft} tries left. Press c to retry from last checkpoint', 
+            f'{self.triesLeft} tries left. Press c to retry from checkpoint', 
             (10, self.height//2 + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
             (190,210,235), 2, cv2.LINE_AA)
         else:
@@ -122,18 +122,19 @@ class MainApp(object):
         helpText = """
 Help Screen
 
-The character will bounce continuously and fall off of 
-the screen unless you draw ground underneath them. Hit 
-space to draw in the air with a blue pointer, and the 
-drawings will appear on the screen as ground for the 
-character. You lose by falling off the screen or by 
-getting caught by an enemy, and scores are determined 
-by total distance run.
+Press space to draw in the air with a blue pointer, 
+and the drawings will appear on the screen as ground 
+for the character. Lose by falling off the screen or by 
+getting caught by an enemy, and get score based on 
+total distance run. Gather power ups to temporarily
+reduce the chances of obstacles/monsters appearing. 
+Every 150m a checkpoint is reached, and a death 
+afterward can return you to a checkpoint as long 
+as you have tries left. You start with 3 tries.
 
 Troubleshooting:
 If the blue color detection of your pointer isn't 
-working, move to a brighter area.
-
+working, move to a brighter area with a darker background.
 
 Press h to return!"""
         self.helpScreen = np.zeros((self.height, self.width, 3), 
@@ -144,7 +145,7 @@ Press h to return!"""
         i = 0
         for line in helpText.split('\n'):
             cv2.putText(self.helpScreen, line, (10, 10 + 25 * i), 
-                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (46,6,69), 2, cv2.LINE_AA)
+                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (46,6,69), 1, cv2.LINE_AA)
             i += 1
             
     #the main game loop, which runs for as long as the camera is on, calls
@@ -372,10 +373,10 @@ Press h to return!"""
             (self.width, self.margin), (190,210,235), thickness = -1)
 
         cv2.putText(self.frame, 'Press h for help', (10, self.height - 10), 
-            cv2.FONT_HERSHEY_DUPLEX, 0.65, (46,6,69), 2, cv2.LINE_AA)
-        overText=f'Distance:{self.distance} Ink:{self.ink} Health:{self.health}'
-        cv2.putText(self.frame, overText, (10, 20), 
-            cv2.FONT_HERSHEY_DUPLEX, 0.65, (46,6,69), 2, cv2.LINE_AA)
+            cv2.FONT_HERSHEY_DUPLEX, 0.65, (46,6,69), 1, cv2.LINE_AA)
+        text=f'Distance:{self.distance}m Ink:{self.ink} Health:{self.health}'
+        cv2.putText(self.frame, text, (10, 20), 
+            cv2.FONT_HERSHEY_DUPLEX, 0.65, (46,6,69), 1, cv2.LINE_AA)
 
         #draw game elements
         self.drawMountains(self.frame)
