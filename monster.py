@@ -109,8 +109,8 @@ class Monster(object):
         return False
 
     #checks if the monster has gone off the edge of the screen
-    def isOffScreen(self):
-        return (self.x < 0)
+    def isOffScreen(self, height):
+        return ((self.x < 0) or (self.y < 0) or (self.y > height))
 
     #draws the monster at its position on a given frame
     def draw(self, frame):

@@ -8,6 +8,7 @@ import random
 from monster import *
 from character import *
 from obstacle import *
+from powerup import *
 
 class MainApp(object):
 
@@ -54,6 +55,9 @@ class MainApp(object):
         self.numObstacles = 0
         self.monsters = set()
         self.obstacles = set()
+
+        self.powerup = Powerup(-1, 0)
+        self.powerupTimer = 0
 
         #starting from checkpoint
         self.distance = 150 * (self.distance // 150)        
@@ -189,12 +193,9 @@ Press h to return!"""
         self.distance += 1
         #game gets harder
         if (self.distance % 150 == 0):
-            if (self.monsterChances > 20):
-                self.monsterChances -= 10
-            if (self.obstacleChances > 20):
-                self.obstacleChances -= 10
-            if (self.inkMax > 10):
-                self.inkMax -= 5
+            if (self.monsterChances > 20): self.monsterChances -= 10
+            if (self.obstacleChances > 20): self.obstacleChances -= 10
+            if (self.inkMax > 10): self.inkMax -= 5
             self.scrollX += 2
 
         if (self.isDrawing):
@@ -213,24 +214,49 @@ Press h to return!"""
                 continue
             i += 1
         self.scrollListPts(self.currLine)
-
-        self.player.dy += 1
         self.player.fall(self.dots, self.currLine)
         if (self.player.checkFellOff(self.height)):
             self.isEndScreen = True
 
+        self.updatePowerup()
         self.updateMonsters()
         self.updateObstacles()
     
+    #updates the movement of the powerup
+    def updatePowerup(self):
+        if (self.powerupTimer >= 0):
+            self.powerupTimer -= 1
+            if (self.powerupTimer == 0):
+                self.obstacleChances -= 10
+                self.monsterChances -= 10
+        self.powerup.x -= self.scrollX
+        if (self.powerup.isOffScreen() and random.randint(1,15) == 1
+            and self.powerupTimer < 0):
+            self.powerup.x = self.width
+            self.powerup.y = random.randint(self.powerup.r*2, 
+                self.height-self.powerup.r*2)
+
+        x1 = self.powerup.x - self.powerup.r
+        y1 = self.powerup.y - self.powerup.r
+        x2 = self.powerup.x + self.powerup.r
+        y2 = self.powerup.y + self.powerup.r
+
+        if (self.player.isTouching((x1, x2, y1, y2)) == 'right' or
+            self.player.isTouching((x1, y1, x2, y2)) == 'left'):
+            self.powerup.x = -10
+            self.obstacleChances += 10
+            self.monsterChances += 10
+            self.powerupTimer = 30
+
     #updates all of the monsters' movements
     def updateMonsters(self):
         toRemove = None
         for monster in self.monsters:
             monster.move(self.obstacles)
-            if (monster.isOffScreen()):
+            if (monster.isOffScreen(self.height)):
                 toRemove = monster
-            x1 = monster.x
-            y1 = monster.y
+            x1 = monster.x - monster.r
+            y1 = monster.y - monster.r
             x2 = monster.x + monster.r
             y2 = monster.y + monster.r
             if (self.player.isTouching((x1, y1, x2, y2)) == 'right' or 
@@ -359,6 +385,7 @@ Press h to return!"""
         for obstacle in self.obstacles:
             obstacle.draw(self.frame)
         self.player.draw(self.frame)
+        self.powerup.draw(self.frame)
 
     #parallax drawing of mountains in the background   
     def drawMountains(self, img):
