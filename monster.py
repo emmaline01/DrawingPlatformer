@@ -1,12 +1,17 @@
-#Drawing Platformer
+#Drawing Platformer (Square Jumper)
 #by Emmaline Mai (emai, Section B)
 
 #Monster class that keeps track of a monster's position and actions
+
+#credit to https://opencv-python-tutroals.readthedocs.io/en/latest/
+# py_tutorials/py_setup/py_setup_in_windows/py_setup_in_windows.html for 
+# tutorials about importing opencv and numpy
 import cv2
 import numpy as np
 import math
 
 class Monster(object):
+
     #initializes the monster with a position
     def __init__(self, x, y, character, id):
         self.id = id
@@ -18,12 +23,10 @@ class Monster(object):
         self.targetNode = (self.character.x, self.character.y)
         self.dy = 0
         self.dx = 0
-        #40 calls to cameraFired per character jump
 
     #moves the monster and adjusts its target node coordinates
     def move(self, obstacles):
         if (self.x - 4*self.r > self.character.x):
-            #TODO: bug where it sometimes spasms between nodes??
             if (self.hasDirectPathToCharacter(obstacles)):
                 self.targetNode = (self.character.x, self.character.y)
             else:
@@ -60,6 +63,7 @@ class Monster(object):
     # the player
     def getNodes(self, obstacles):
         nodes = []
+
         for obstacle in obstacles:
             if (obstacle.x > self.character.x and obstacle.x < self.x):
                 x = obstacle.x + obstacle.width // 2
@@ -110,7 +114,7 @@ class Monster(object):
 
     #draws the monster at its position on a given frame
     def draw(self, frame):
-        cv2.circle(frame, (self.x, self.y), self.r, (0,0,255), thickness = -1)
+        cv2.circle(frame, (self.x, self.y), self.r, (63,48,164), thickness = -1)
 
     #a hash function for the monster that depends on the monster's ID
     def __hash__(self):
