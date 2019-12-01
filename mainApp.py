@@ -69,6 +69,8 @@ class MainApp(object):
         self.isStartScreen = True
         self.isEndScreen = False
         self.isHelpScreen = False
+        self.isEnteringNameScreen = True
+        self.answer = ""
 
         self.initStartScreen()
         self.initHelpScreen()
@@ -157,7 +159,9 @@ Press h to return!"""
         while (self.cap.isOpened()):
             self.blank = np.zeros((self.height, self.width, 3), dtype=np.uint8)
             _, self.frame = self.cap.read()
-            
+
+            if (self.isEnteringNameScreen):
+                self.enterName()
             if (self.isHelpScreen):
                 toShow = self.helpScreen
             elif (self.isStartScreen):
@@ -310,6 +314,7 @@ Press h to return!"""
     def checkKeyPressed(self):
         key = cv2.waitKey(25) & 0xFF
         #universal keys
+        '''
         if (key == ord('q')):
             self.endGame()
         elif (key == ord('r')):
@@ -333,6 +338,16 @@ Press h to return!"""
                     self.currLine = []
                 else:
                     self.isDrawing = True
+        '''
+
+    def enterName(self):
+        key = cv2.waitKey(25) & 0xFF
+        if (key >= ord('A') and key <= ord('z')):
+            self.answer += chr(key)
+            print(f'{self.answer}')
+        if (key == ord('\n')): #THIS DOESN'T WORK
+            self.isEnteringNameScreen = False
+            print(f'{self.answer}')
 
     #uses vision to identify the blue pointer and store its current position 
     # as the newest point in the list of point forming a line currently being 
