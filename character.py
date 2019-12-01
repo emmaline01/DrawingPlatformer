@@ -24,6 +24,11 @@ class Character(object):
     def fall(self, ground, currGround):
         self.dy += 1
         self.y += self.dy
+        if (self.y < 0):
+            self.dy = 0
+        self.landOnPlatform(ground, currGround)
+
+    def landOnPlatform(self, ground, currGround):
         nearestPtLeft = (-1, -1, -1, -1)
         nearestPtRight = (-1, -1, -1, -1)
 

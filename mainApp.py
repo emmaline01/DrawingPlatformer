@@ -3,12 +3,11 @@
 
 #This file contains the mainApp class, begins the game, and runs it
 
-import random 
-
 from monster import *
 from character import *
 from obstacle import *
-from powerup import *
+from LessEnemiesPowerup import *
+from slowerEnemiesPowerup import *
 
 class MainApp(object):
 
@@ -43,6 +42,7 @@ class MainApp(object):
     def startFromCheckpoint(self):
         self.dots = []
         self.isDrawing = False
+        self.lastDist = -10
         self.currLine = []
         self.ink = self.inkMax
         self.health = 5
@@ -56,8 +56,10 @@ class MainApp(object):
         self.monsters = set()
         self.obstacles = set()
 
-        self.powerup = Powerup(-1, 0)
-        self.powerupTimer = 0
+        self.lessEnemiesPowerup = LessEnemiesPowerup(-1, 0, self)
+        self.slowerEnemiesPowerup = SlowerEnemiesPowerup(-1, 0, self)
+
+        self.checkpointTimer = 0
 
         #starting from checkpoint
         self.distance = 150 * (self.distance // 150)        
@@ -193,11 +195,8 @@ Press h to return!"""
     def cameraFired(self):
         self.distance += 1
         #game gets harder
-        if (self.distance % 150 == 0):
-            if (self.monsterChances > 20): self.monsterChances -= 10
-            if (self.obstacleChances > 20): self.obstacleChances -= 10
-            if (self.inkMax > 10): self.inkMax -= 5
-            self.scrollX += 2
+        self.checkCheckpointReached()
+        self.checkIncreaseScrollX()
 
         if (self.isDrawing):
             self.findBlue()
@@ -219,35 +218,34 @@ Press h to return!"""
         if (self.player.checkFellOff(self.height)):
             self.isEndScreen = True
 
-        self.updatePowerup()
+        self.lessEnemiesPowerup.update()
+        self.slowerEnemiesPowerup.update()
         self.updateMonsters()
         self.updateObstacles()
     
-    #updates the movement of the powerup
-    def updatePowerup(self):
-        if (self.powerupTimer >= 0):
-            self.powerupTimer -= 1
-            if (self.powerupTimer == 0):
-                self.obstacleChances -= 10
+    def checkCheckpointReached(self):
+        if (self.checkpointTimer > 0):
+            cv2.putText(self.frame, 'Checkpoint reached!', 
+                (self.width//2 - 150, self.height//2), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (171,239,81), 2, cv2.LINE_AA)
+            self.checkpointTimer -= 1
+
+        if (self.distance % 150 == 0):
+            if (self.monsterChances > 20): 
                 self.monsterChances -= 10
-        self.powerup.x -= self.scrollX
-        if (self.powerup.isOffScreen() and random.randint(1,15) == 1
-            and self.powerupTimer < 0):
-            self.powerup.x = self.width
-            self.powerup.y = random.randint(self.powerup.r*2, 
-                self.height-self.powerup.r*2)
+            if (self.obstacleChances > 20): 
+                self.obstacleChances -= 10
+            if (self.inkMax > 10): 
+                self.inkMax -= 5
+            self.lastDist = self.distance
+            self.checkpointTimer = 20
 
-        x1 = self.powerup.x - self.powerup.r
-        y1 = self.powerup.y - self.powerup.r
-        x2 = self.powerup.x + self.powerup.r
-        y2 = self.powerup.y + self.powerup.r
-
-        if (self.player.isTouching((x1, x2, y1, y2)) == 'right' or
-            self.player.isTouching((x1, y1, x2, y2)) == 'left'):
-            self.powerup.x = -10
-            self.obstacleChances += 10
-            self.monsterChances += 10
-            self.powerupTimer = 30
+    #increments scrollX more gradually than all at once
+    def checkIncreaseScrollX(self):
+        if (self.lastDist + 20 > self.distance and self.distance % 10 == 0):
+            self.scrollX += 1
+        else:
+            self.lastDist = -10
 
     #updates all of the monsters' movements
     def updateMonsters(self):
@@ -379,17 +377,20 @@ Press h to return!"""
             cv2.FONT_HERSHEY_DUPLEX, 0.65, (46,6,69), 1, cv2.LINE_AA)
 
         #draw game elements
-        self.drawMountains(self.frame)
+        self.drawMountains()
         self.drawDots()
         for monster in self.monsters:
             monster.draw(self.frame)
         for obstacle in self.obstacles:
             obstacle.draw(self.frame)
         self.player.draw(self.frame)
-        self.powerup.draw(self.frame)
+        self.lessEnemiesPowerup.draw(self.frame)
+        self.slowerEnemiesPowerup.draw(self.frame)
 
     #parallax drawing of mountains in the background   
-    def drawMountains(self, img):
+    def drawMountains(self):
+        backG = self.frame.copy()
+
         mountainWidth = self.width // 5
 
         #back set
@@ -399,8 +400,8 @@ Press h to return!"""
                 trianglePts = np.array([(i, self.height - self.margin), 
                     (i+mountainWidth, self.height - self.margin), 
                     ((i+i+mountainWidth)//2, 
-                    self.height - 100 - self.margin)])
-                cv2.drawContours(img, [trianglePts], -1, (203,164,229), -1)
+                    self.height - 150 - self.margin)])
+                cv2.drawContours(backG, [trianglePts], -1, (203,164,229), -1)
         
         #front set
         for i in range(-1 * self.scrollX * self.distance, self.width, 
@@ -409,8 +410,10 @@ Press h to return!"""
                 trianglePts = np.array([(i, self.height - self.margin), 
                     (i+mountainWidth, self.height - self.margin), 
                     ((i+i+mountainWidth)//2, 
-                    self.height - 50 - self.margin)])
-                cv2.drawContours(img, [trianglePts], -1, (190,210,235), -1)
+                    self.height - 75 - self.margin)])
+                cv2.drawContours(backG, [trianglePts], -1, (190,210,235), -1)
+
+        self.frame = cv2.addWeighted(backG, 0.5, self.frame, 0.5, 0)
     
     #draws the lines on the screen that the player is drawing
     def drawDots(self):
