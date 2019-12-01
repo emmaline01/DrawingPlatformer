@@ -11,12 +11,16 @@ longer draw. Players get more ink by continuing to play without using ink, and i
 automatically regenerates. The character loses by falling off the bottom of the screen, 
 getting pushed backwards off the screen by the obstacles, or by running out of health 
 after being damaged from touching enemies, and scores are determined by total distance 
-that the character bounced. The game gets harder the longer it's played, as it increases 
-in speed and numbers of obstacles and enemies.
+that the character bounced. The character can collect powerups to temporarily decrease 
+the chances of monsters and obstacles appearing. The game gets harder the longer it's 
+played, as it increases in speed and numbers of obstacles and enemies. Every 150m, the 
+character passes a checkpoint. When the character dies after a checkpoint, if the 
+player still has tries, the character can restart from the last checkpoint. The player 
+starts with 3 tries.
 
 How to run the project:
-Make sure the character, monster, obstacle, and mainApp files are in the same directory, 
-and run the mainApp.py file. Press q to close the game window when finished.
+Make sure the character, monster, obstacle, powerup, and mainApp files are in the same 
+directory, and run the mainApp.py file. Press q to close the game window when finished.
 
 Libraries needed:
 opencv, numpy
