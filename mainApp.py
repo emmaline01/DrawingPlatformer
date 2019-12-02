@@ -34,7 +34,7 @@ class MainApp(object):
         self.monsterChances = 80
 
         self.startFromCheckpoint()
-        self.initScreens()
+        self.initScreens() 
         self.gameLoop()
 
     #initializes the game by keeping parts of model that stay when 
@@ -62,15 +62,18 @@ class MainApp(object):
         self.checkpointTimer = 0
 
         #starting from checkpoint
-        self.distance = 150 * (self.distance // 150)        
+        self.distance = 150 * (self.distance // 150)     
 
     #calls functions to initialize the start, end, and help screens
     def initScreens(self):
         self.isStartScreen = True
         self.isEndScreen = False
         self.isHelpScreen = False
-        self.isEnteringNameScreen = True
-        self.answer = ""
+
+        self.isEnteringNameScreen = False
+        self.name = ""
+
+        self.isLeaderboardScreen = False
 
         self.initStartScreen()
         self.initHelpScreen()
@@ -98,27 +101,29 @@ class MainApp(object):
         cv2.rectangle(self.endScreen, (0,0), 
             (self.width, self.height), (46,6,69), thickness = -1)
         cv2.putText(self.endScreen, 
-            'Better luck next time.', 
-            (10, self.height//2 - 50), cv2.FONT_HERSHEY_DUPLEX, 1.2, 
+            'Better luck next time.', (10, self.height//2 - 70), 
+            cv2.FONT_HERSHEY_DUPLEX, 1.2, (203,164,229), 2, cv2.LINE_AA)
+        cv2.putText(self.endScreen, f'Total distance bounced: {self.distance}m', 
+            (10, self.height//2 - 20), cv2.FONT_HERSHEY_DUPLEX, 1.2, 
             (203,164,229), 2, cv2.LINE_AA)
+
         cv2.putText(self.endScreen, 
-            f'Total distance bounced: {self.distance}m', 
-            (10, self.height//2), cv2.FONT_HERSHEY_DUPLEX, 1.2, 
-            (203,164,229), 2, cv2.LINE_AA)
+            'Press e to add yourself to the leaderboard!', 
+            (10, self.height//2 + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
+            (190,210,235), 2, cv2.LINE_AA)
+        
         if (self.triesLeft > 0):
             cv2.putText(self.endScreen, 
             f'{self.triesLeft} tries left. Press c to retry from checkpoint', 
-            (10, self.height//2 + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
+            (10, self.height//2 + 150), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
             (190,210,235), 2, cv2.LINE_AA)
         else:
-            cv2.putText(self.endScreen, 
-            'Sorry, you have no tries left.', 
-            (10, self.height//2 + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
+            cv2.putText(self.endScreen, 'Sorry, you have no tries left.', 
+            (10, self.height//2 + 150), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
             (190,210,235), 2, cv2.LINE_AA)
 
-        cv2.putText(self.endScreen, 
-            'Press r to restart entirely', 
-            (10, self.height//2 + 120), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
+        cv2.putText(self.endScreen, 'Press r to restart entirely', 
+            (10, self.height//2 + 190), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
             (190,210,235), 2, cv2.LINE_AA)
 
     #sets up the help screen
@@ -151,7 +156,54 @@ Press h to return!"""
             cv2.putText(self.helpScreen, line, (10, 10 + 25 * i), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.65, (46,6,69), 1, cv2.LINE_AA)
             i += 1
-            
+
+    #initialzes the screen for players to enter their names for the leaderboard
+    def initEnteringNameScreen(self):
+        self.enteringNameScreen = np.zeros((self.height, self.width, 3), 
+            np.uint8)
+        cv2.rectangle(self.enteringNameScreen, (0,0), 
+            (self.width, self.height), (203,164,229), thickness = -1)
+        cv2.putText(self.enteringNameScreen, 
+            'Enter your name for the leaderboard and hit enter when done.', 
+            (20, self.height // 2 - 50), 
+            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (46,6,69), 1, cv2.LINE_AA)
+        cv2.putText(self.enteringNameScreen, 
+            'It may only contain upper and lowercase letters.', 
+            (20, self.height // 2), 
+            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (46,6,69), 1, cv2.LINE_AA)
+        if (self.name == ""):
+            text = "(start typing and your name will appear here)"
+        else:
+            text = f'{self.name}'
+        cv2.putText(self.enteringNameScreen, text, (20, self.height // 2 + 50), 
+            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (46,6,69), 1, cv2.LINE_AA)
+
+    #initializes the leaderboard screen
+    def initLeaderboardScreen(self):
+        self.leaderboardScreen = np.zeros((self.height, self.width, 3), 
+            np.uint8)
+        cv2.rectangle(self.leaderboardScreen, (0,0), 
+            (self.width, self.height), (203,164,229), thickness = -1)
+        cv2.putText(self.leaderboardScreen, 
+            'Leaderboard:', 
+            (10, 50), 
+            cv2.FONT_HERSHEY_SIMPLEX, 1, (46,6,69), 2, cv2.LINE_AA)
+        
+        leaderboard = open('leaderboard.txt', 'r')
+        ranks = leaderboard.readlines()
+        leaderboard.close()
+        i = 0
+        for rank in ranks:
+            cv2.putText(self.leaderboardScreen, rank.strip(), 
+                (10, 100 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 
+                0.65, (46,6,69), 1, cv2.LINE_AA)
+            i += 1     
+
+        cv2.putText(self.leaderboardScreen, 
+            'Press r to restart!', 
+            (10, self.height - 50), 
+            cv2.FONT_HERSHEY_SIMPLEX, 1, (46,6,69), 2, cv2.LINE_AA)
+
     #the main game loop, which runs for as long as the camera is on, calls
     #  the various functions that make gameplay possible, and displays the 
     # screen
@@ -160,10 +212,15 @@ Press h to return!"""
             self.blank = np.zeros((self.height, self.width, 3), dtype=np.uint8)
             _, self.frame = self.cap.read()
 
-            if (self.isEnteringNameScreen):
-                self.enterName()
             if (self.isHelpScreen):
                 toShow = self.helpScreen
+            elif (self.isEnteringNameScreen):
+                self.enterName()
+                self.initEnteringNameScreen()
+                toShow = self.enteringNameScreen
+            elif (self.isLeaderboardScreen):
+                self.initLeaderboardScreen()
+                toShow = self.leaderboardScreen
             elif (self.isStartScreen):
                 toShow = self.startScreen
             elif (self.isEndScreen):
@@ -180,7 +237,6 @@ Press h to return!"""
                     self.frame, 0.7, 0)
             
             cv2.imshow('Square Jumper', toShow)
-
             self.checkKeyPressed()
 
     #blurs and smooths out the drawing done by the player by 
@@ -227,11 +283,10 @@ Press h to return!"""
         self.updateMonsters()
         self.updateObstacles()
     
+    #checks if a checkpoint has been reached
     def checkCheckpointReached(self):
         if (self.checkpointTimer > 0):
-            cv2.putText(self.frame, 'Checkpoint reached!', 
-                (self.width//2 - 150, self.height//2), 
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (171,239,81), 2, cv2.LINE_AA)
+            self.drawCheckpoint()
             self.checkpointTimer -= 1
 
         if (self.distance % 150 == 0):
@@ -312,42 +367,67 @@ Press h to return!"""
 
     #checks keys to see if the player wants to close the window, or draw
     def checkKeyPressed(self):
-        key = cv2.waitKey(25) & 0xFF
-        #universal keys
-        '''
-        if (key == ord('q')):
-            self.endGame()
-        elif (key == ord('r')):
-            self.startGame()
-        elif (key == ord('h')):
-            self.isHelpScreen = not self.isHelpScreen
+        key = cv2.waitKey(5) & 0xFF
+        if (not self.isEnteringNameScreen):
+            #universal keys
+            if (key == ord('q')):
+                self.endGame()        
+            elif (key == ord('r')):
+                self.startGame()
+            elif (key == ord('h')):
+                self.isHelpScreen = not self.isHelpScreen
 
-        if (self.isStartScreen): 
-            if (key == ord(' ')):
-                self.isStartScreen = False
-        elif (self.isEndScreen):
-            if (self.triesLeft > 0 and key == ord('c')):
-                self.startFromCheckpoint()
-                self.isEndScreen = False
-                self.triesLeft -= 1
-        elif (not self.isEndScreen and not self.isHelpScreen):
-            if (key == ord(' ')):
-                if (self.isDrawing == True):
-                    self.isDrawing = False
-                    self.dots += [self.currLine]
-                    self.currLine = []
-                else:
-                    self.isDrawing = True
-        '''
+            if (self.isStartScreen): 
+                if (key == ord(' ')):
+                    self.isStartScreen = False
+            elif (self.isEndScreen):
+                if (self.triesLeft > 0 and key == ord('c')):
+                    self.startFromCheckpoint()
+                    self.isEndScreen = False
+                    self.triesLeft -= 1
+                elif (key == ord('e')):
+                    self.isEnteringNameScreen = True
+                    self.isEndScreen = False
+            elif (not self.isEndScreen and not self.isHelpScreen):
+                if (key == ord(' ')):
+                    if (self.isDrawing == True):
+                        self.isDrawing = False
+                        self.dots += [self.currLine]
+                        self.currLine = []
+                    else:
+                        self.isDrawing = True
 
+    #handles the player typing their name and adds that name to the leaderboard
     def enterName(self):
-        key = cv2.waitKey(25) & 0xFF
-        if (key >= ord('A') and key <= ord('z')):
-            self.answer += chr(key)
-            print(f'{self.answer}')
-        if (key == ord('\n')): #THIS DOESN'T WORK
+        key = cv2.waitKey(5) & 0xFF
+        if (key in range(97, 123) or key in range(65, 91)):
+            self.name += chr(key)
+        elif (key == 13 and self.name != ""):
             self.isEnteringNameScreen = False
-            print(f'{self.answer}')
+            self.isLeaderboardScreen = True
+
+            leaderboardR = open('leaderboard.txt', 'r')
+            ranks = leaderboardR.readlines()
+            newRanks = copy.copy(ranks)
+            inserted = False
+            for line in ranks:
+                for value in line.split():
+                    if (value.isdigit() and int(value) <= self.distance):
+                        newRanks.insert(ranks.index(line), 
+                            f'{self.name} {self.distance} \n')
+                        inserted = True
+                        break
+                if (inserted):
+                    break
+            if (not inserted):
+                newRanks += [f'{self.name} {self.distance} \n']
+            if (len(newRanks) > 10):
+                newRanks.pop()
+            leaderboardR.close()
+
+            leaderboardW = open('leaderboard.txt', 'w')
+            leaderboardW.writelines(newRanks)
+            leaderboardW.close()
 
     #uses vision to identify the blue pointer and store its current position 
     # as the newest point in the list of point forming a line currently being 
@@ -448,9 +528,15 @@ Press h to return!"""
                 cv2.line(self.blank, (x1, y1), (x2, y2), (190,210,235), 
                     thickness = 20, lineType=cv2.LINE_AA)
 
+    #draws a message for a checkpoint
+    def drawCheckpoint(self):
+        cv2.putText(self.frame, 'Checkpoint reached!', 
+                (self.width//2 - 150, self.height//2), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (171,239,81), 2, cv2.LINE_AA)
+
     # closes the windows when the player wants to quit the game        
     def endGame(self):
-        cv2.destroyAllWindows() 
+        cv2.destroyAllWindows()
         self.cap.release() 
 
 m = MainApp()
