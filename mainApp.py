@@ -75,24 +75,30 @@ class MainApp(object):
 
         self.isLeaderboardScreen = False
 
-        self.initStartScreen()
         self.initHelpScreen()
 
     #sets up the starting screen
     def initStartScreen(self):
-        self.startScreen = np.zeros((self.height, self.width, 3), 
-            np.uint8)
-        cv2.rectangle(self.startScreen, (0,0), 
-            (self.width, self.height), (203,164,229), thickness = -1)
-        cv2.putText(self.startScreen, 'SQUARE JUMPER', 
+        for c in self.findBlue():
+            x,y,w,h = cv2.boundingRect(c)
+            if (y > 10 and h > 10):
+                cv2.rectangle(self.frame,(x,y),(x+w,y+h),
+                    (190,210,235),2)
+        self.frame = cv2.flip(self.frame, 1)
+
+        cv2.putText(self.frame, 'SQUARE JUMPER', 
             (10, self.height//2 - 40), 
-            cv2.FONT_HERSHEY_DUPLEX, 2, (46,6,69), 2, cv2.LINE_AA)
-        cv2.putText(self.startScreen, 'Press space to play!', 
+            cv2.FONT_HERSHEY_DUPLEX, 2, (203,164,229), 2, cv2.LINE_AA)
+        cv2.putText(self.frame, 'Press space to play!', 
             (10, self.height//2 + 100), cv2.FONT_HERSHEY_DUPLEX, 1, 
-            (46,6,69), 2, cv2.LINE_AA)
-        cv2.putText(self.startScreen, 'Press h for help', 
+            (203,164,229), 2, cv2.LINE_AA)
+        cv2.putText(self.frame, 'Press h for help', 
             (10, self.height//2 + 150), cv2.FONT_HERSHEY_DUPLEX, 1, 
-            (46,6,69), 2, cv2.LINE_AA)
+            (203,164,229), 2, cv2.LINE_AA)
+        cv2.putText(self.frame, 
+            'Test your blue pointer detection on this screen', 
+            (10, self.height - 50), cv2.FONT_HERSHEY_DUPLEX, 0.75, 
+            (203,164,229), 1, cv2.LINE_AA)
 
     #sets up the ending screen
     def initEndScreen(self):
@@ -131,19 +137,21 @@ class MainApp(object):
         helpText = """
 Help Screen
 
-Press space to draw in the air with a blue pointer, 
-and the drawings will appear on the screen as ground 
-for the character. Lose by falling off the screen or by 
-getting caught by an enemy, and get score based on 
-total distance run. Gather power ups to temporarily
-reduce the chances of obstacles/monsters appearing. 
-Every 150m a checkpoint is reached, and a death 
-afterward can return you to a checkpoint as long 
-as you have tries left. You start with 3 tries.
+Press space to draw/stop drawing in the air with a pointer
+with a blue tip, and the drawings will appear on the 
+screen as platforms for the character. The game ends when 
+you fall off the screen or run out of health from being 
+caught by enemies, and scores are based on total distance 
+run. Gather power ups to temporarily reduce the chances 
+of obstacles/enemies appearing or slow enemies down. A 
+checkpoint is reached every 150m, and after losing you can 
+restart at a checkpoint as long as you have tries left. 
+You start with 3 tries.
 
-Troubleshooting:
-If the blue color detection of your pointer isn't 
-working, move to a brighter area with a darker background.
+Pointer Troubleshooting:
+Check if the blue color detection works on the start screen.
+If it isn't working, move to a brighter area with a darker 
+background. Draw slowly!
 
 Press h to return!"""
         self.helpScreen = np.zeros((self.height, self.width, 3), 
@@ -153,8 +161,8 @@ Press h to return!"""
         lineHeight = 20
         i = 0
         for line in helpText.split('\n'):
-            cv2.putText(self.helpScreen, line, (10, 10 + 25 * i), 
-                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (46,6,69), 1, cv2.LINE_AA)
+            cv2.putText(self.helpScreen, line, (10, 5 + 20 * i), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (46,6,69), 1, cv2.LINE_AA)
             i += 1
 
     #initialzes the screen for players to enter their names for the leaderboard
@@ -222,7 +230,9 @@ Press h to return!"""
                 self.initLeaderboardScreen()
                 toShow = self.leaderboardScreen
             elif (self.isStartScreen):
-                toShow = self.startScreen
+                self.initStartScreen()
+                toShow = self.frame
+                #toShow = self.startScreen
             elif (self.isEndScreen):
                 self.initEndScreen()
                 toShow = self.endScreen
@@ -259,7 +269,7 @@ Press h to return!"""
         self.checkIncreaseScrollX()
 
         if (self.isDrawing):
-            self.findBlue()
+            self.addToCurrLine(self.findBlue())
             self.ink -= 1
             if (self.ink <= 0):
                 self.isDrawing = False
@@ -402,6 +412,8 @@ Press h to return!"""
         key = cv2.waitKey(5) & 0xFF
         if (key in range(97, 123) or key in range(65, 91)):
             self.name += chr(key)
+        elif (key == 8):
+            self.name = self.name[:len(self.name) - 1]
         elif (key == 13 and self.name != ""):
             self.isEnteringNameScreen = False
             self.isLeaderboardScreen = True
@@ -444,7 +456,10 @@ Press h to return!"""
         ret, thresh = cv2.threshold(mask, 127, 255, cv2.THRESH_TOZERO)
         contours, hier = cv2.findContours(thresh, cv2.RETR_TREE, 
             cv2.CHAIN_APPROX_SIMPLE)
+        return contours
 
+    #adds detected contours to the current platform being drawn
+    def addToCurrLine(self, contours):
         for c in contours:
             x,y,w,h = cv2.boundingRect(c)
             if (y > 10 and h > 10):
