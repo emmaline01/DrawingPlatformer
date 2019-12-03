@@ -28,6 +28,7 @@ class Character(object):
             self.dy = 0
         self.landOnPlatform(ground, currGround)
 
+    #handles the character detecting and bouncing off of a platform
     def landOnPlatform(self, ground, currGround):
         nearestPtLeft = (-1, -1, -1, -1)
         nearestPtRight = (-1, -1, -1, -1)

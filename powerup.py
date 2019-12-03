@@ -47,9 +47,13 @@ class Powerup(object):
             self.timer = 80
             self.doPower()
 
+    #a setup for a method that all subclasses of powerup should have 
+    # implements the power
     def doPower(self):
         pass
     
+    #a setup for a method that all subclasses of powerup should have 
+    # undoes the power
     def reversePower(self):
         pass
 

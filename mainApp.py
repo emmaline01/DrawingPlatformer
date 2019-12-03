@@ -117,7 +117,6 @@ class MainApp(object):
             'Press e to add yourself to the leaderboard!', 
             (10, self.height//2 + 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, 
             (190,210,235), 2, cv2.LINE_AA)
-        
         if (self.triesLeft > 0):
             cv2.putText(self.endScreen, 
             f'{self.triesLeft} tries left. Press c to retry from checkpoint', 
@@ -232,19 +231,15 @@ Press h to return!"""
             elif (self.isStartScreen):
                 self.initStartScreen()
                 toShow = self.frame
-                #toShow = self.startScreen
             elif (self.isEndScreen):
                 self.initEndScreen()
                 toShow = self.endScreen
             else:
                 self.frame = cv2.flip(self.frame, 1)
-
                 self.cameraFired()
                 self.redrawAll()
-                
                 self.blurDrawing()
-                toShow = cv2.addWeighted(self.blank, 1, 
-                    self.frame, 0.7, 0)
+                toShow = cv2.addWeighted(self.blank, 1, self.frame, 0.7, 0)
             
             cv2.imshow('Square Jumper', toShow)
             self.checkKeyPressed()
@@ -429,10 +424,8 @@ Press h to return!"""
                             f'{self.name} {self.distance} \n')
                         inserted = True
                         break
-                if (inserted):
-                    break
-            if (not inserted):
-                newRanks += [f'{self.name} {self.distance} \n']
+                if (inserted): break
+            if (not inserted): newRanks += [f'{self.name} {self.distance} \n']
             if (len(newRanks) > 10):
                 newRanks.pop()
             leaderboardR.close()
