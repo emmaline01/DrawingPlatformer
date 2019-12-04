@@ -497,7 +497,7 @@ Press h to return!"""
         mountainWidth = self.width // 5
 
         #back set
-        for i in range(-1 * (self.scrollX + 2) * self.distance, 
+        for i in range(-1 * (self.scrollX - 2) * self.distance, 
             self.width, mountainWidth):
             if (i + mountainWidth >= 0):
                 trianglePts = np.array([(i, self.height - self.margin), 

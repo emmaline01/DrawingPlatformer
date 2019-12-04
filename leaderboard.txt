@@ -1,3 +1,6 @@
+sam 298 
 emily 257 
 joe 76
+Jack 70 
+tim 65 
 bob 1
